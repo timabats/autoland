@@ -1,8 +1,7 @@
-#pragma once
+#ifndef AUTOLAND_H
+#define AUTOLAND_H
 
 #include "esp_camera.h"
-#include <test_inferencing.h>
-#include "edge-impulse-sdk/dsp/image/image.hpp"
 #include <MAVLink_ardupilotmega.h>
 #include <math.h>
 #include <SoftwareSerial.h>
@@ -26,7 +25,6 @@ private:
   const int frame_color = 3;
   uint8_t* snapshot_buf;
   uint8_t* mask_buf;
-  Mask hsv_mask;
 
   camera_config_t camera_config = 
   {
@@ -64,13 +62,15 @@ private:
 
   struct Mask
   {
-    int min_h = 0,
-    int max_h = 0,
-    int min_s = 0,
-    int max_s = 0,
-    int min_v = 0,
-    int max_v = 0
-  }; 
+    int min_h = 0;
+    int max_h = 0;
+    int min_s = 0;
+    int max_s = 0;
+    int min_v = 0;
+    int max_v = 0;
+  };
+
+  Mask hsv_mask;
 
   bool capture_rgb888();
   uint8_t max(uint8_t a, uint8_t b, uint8_t c);
@@ -82,9 +82,14 @@ private:
 class LandingController
 {
 public:
-
+  static LandingController& get_instance()
+  { 
+    static LandingController controller;
+    return controller;
+  }
   bool init(SoftwareSerial* FC);
-  void handle_landing(uint16_t dist_cm, SoftwareSerial& fc);
+  void handle_landing(uint16_t dist_cm);
+  int get_data(size_t offset, size_t length, float *out_ptr);
 
 private:
   Camera cam;
@@ -94,17 +99,18 @@ private:
   int height = 240;
   uint16_t distance_cm;
   int max_err_to_accept = 400;
-  uint8_t cropped_buf;
+  uint8_t* cropped_buf;
   int yes_class_id = 1;
   float threshold = 0.6;
   int max_land_dist_cm = 400;
   SoftwareSerial* fc;
+  bool debug_nn = false;
 
   struct Vector3
   {
-    int x = 0,
-    int y = 0,
-    int z = 0
+    int x = 0;
+    int y = 0;
+    int z = 0;
 
     float len()
     {
@@ -117,11 +123,12 @@ private:
   int radius_estimation(float multiplier = 1);
   int area_estimation();
   int get_pix_ind(uint16_t x, uint16_t y);
-  bool check(uint8_t mask, uint16_t x, uint16_t y);
+  bool check(uint8_t* mask, uint16_t x, uint16_t y);
   void dfs(uint8_t* mask, uint16_t x, uint16_t y, int& area, float& cx, float& cy);
   int find_area(uint8_t* mask, uint16_t st_x, uint16_t st_y, uint16_t& center_x, uint16_t& center_y);
   bool get_mask_center(uint8_t* mask, int& center_x, int& center_y);
-  int ei_camera_get_data(size_t offset, size_t length, float *out_ptr);
   bool classify(uint8_t* img, int center_x, int center_y);
   void send_landing_target();
 };
+
+#endif //AUTOLAND_H

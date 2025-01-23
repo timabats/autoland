@@ -4,7 +4,7 @@
 
 SoftwareSerial fc(12, 13);
 MAVBridge bridge(&fc, false);
-LandingController landing_controller;
+LandingController& landing_controller = LandingController::get_instance();
 
 void setup()
 {

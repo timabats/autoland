@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MAVBRIDGE_H
+#define MAVBRIDGE_H
 
 #include <WiFi.h>
 #include <WiFiAP.h>
@@ -23,11 +24,12 @@ public:
 
 private:
   WiFiUDP udp;
-  IPAddress gcs(255, 255, 255, 255);
-  IPAddress broadcast(255, 255, 255, 255);
+  IPAddress gcs;
+  IPAddress broadcast;
   bool serialDebug = true;
-  uint32_t flightmode;
+  uint32_t flightmode = 0;
   uint16_t distance = 0;
+  SoftwareSerial* fc;
 
   void parse_debug(uint8_t* buf, int packetSize, int chan);
 
@@ -38,3 +40,5 @@ private:
   void send_heartbeat_to_gcs();
 
 };
+
+#endif //MAVBRIDGE_H
